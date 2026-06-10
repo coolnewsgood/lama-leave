@@ -1,0 +1,70 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  lineUserId   String   @unique
+  name         String
+  role         Role     @default(EMPLOYEE)
+  department   String?
+  managerId    String?
+  manager      User?    @relation("Manager", fields: [managerId], references: [id])
+  subordinates User[]   @relation("Manager")
+  leaveRequests LeaveRequest[]
+  leaveBalances LeaveBalance[]
+  createdAt    DateTime @default(now())
+}
+
+model LeaveRequest {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  leaveType  LeaveType
+  startDate  DateTime
+  endDate    DateTime
+  duration   Float
+  reason     String?
+  status     Status    @default(PENDING)
+  approvedBy String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model LeaveBalance {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  leaveType LeaveType
+  year      Int
+  total     Float
+  used      Float     @default(0)
+  remaining Float
+}
+
+enum Role {
+  EMPLOYEE
+  MANAGER
+  HR
+}
+
+enum LeaveType {
+  ANNUAL
+  SICK
+  PERSONAL
+  MATERNITY
+  ORDINATION
+  BEREAVEMENT
+}
+
+enum Status {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
